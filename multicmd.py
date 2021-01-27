@@ -92,7 +92,7 @@ if __name__ == '__main__':
                                      formatter_class = CustomFormatter,
                                      epilog = 'Examples:\n'
                                      + f'  (for n in 8 7 6 5 4 3 2 1; do echo "sleep $n"; done) | {prog} -n 4 # run 8 processes on 4 cores\n'
-                                     + f'  {prog} -t | {prog} # run some 1800 jobs with redirection t files using all available cores'
+                                     + f'  {prog} -t | {prog} # run some 1800 jobs with output redirection using all available cores'
                                      )
     parser.add_argument('-n', '--ncpu',  type=int,  default=CountCores(),  nargs='?', help='max number of parallel jobs')
     parser.add_argument('-t', '--test',  action='store_true',                         help='print a bunch of commands for testing')
