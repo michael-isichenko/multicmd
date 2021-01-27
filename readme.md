@@ -2,7 +2,9 @@
 
 [multicmd](https://github.com/michael-isichenko/multicmd) is a process scheduler written in python.  `multicmd` can be used as a module you can `import` in a script or as a standalone program.
 
-`muticmd` runs multiple processes (defined by their command lines) in parallel on a multi-core host so that a specified number of cores N (and no more) are fully loaded.  N defaults to the number or cores returned by multiprocessing.cpu_count().  It takes a list of commands (when used as module) or a file/stdin with one command per line.  First N comamnds are executed in subshells.  As each started process ends, a new one is started, and so on, until all cammands are executed.
+`muticmd` runs multiple processes (defined by their command lines) in parallel on a multi-core host so that a specified number of cores N (and no more) are fully loaded.  N defaults to the number or cores returned by multiprocessing.cpu_count().
+
+`multicmd.Run()` takes a list of commands to be executed in subshells. `multicmd.py` reads a file or stdin with one command per line.  Then first N commands are started.  As each process ends, a new one is started to keep the cores loaded, and so on until all commands are executed.
 
 ## Usage
 
