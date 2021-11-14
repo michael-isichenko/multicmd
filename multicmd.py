@@ -1,8 +1,15 @@
 #!/usr/local/miniconda3/bin/python
 
 import subprocess, os, sys, time
+from datetime import datetime
+
+def Now():
+    now = datetime.now()
+    return now.strftime("%Y%m%d.%H:%M:%S")
 
 _cores = 0
+_multilog = f'{os.environ["HOME"]}/multi.log'
+
 def CountCores():
     global _cores
     if _cores == 0:
@@ -28,9 +35,13 @@ def NiceTime(sec):
 
 def RunByOne(cmd_list):
     pids = {}
+    count = 0
     for cmd in cmd_list:
         proc = subprocess.Popen(cmd, shell=True)
-        print(f'# START({proc.pid}):  {cmd}')
+        # print(f'#  [{count}/{len(cmd_list)}] START({proc.pid}):  {cmd}')
+        with open(_multilog, "a") as log:
+            print(f'{Now()} START pid={proc.pid}:  {cmd}', file=log)
+        count += 1
         try:
             pid, retval = os.wait()
         except os.error: # OSError: [Errno 10] No child processes
@@ -51,12 +62,16 @@ def Run(cmd_list, ncpu=0):
         assert cmd not in cmd_to_pid, f'duplicate cmd: {cmd}'
         cmd_to_pid[cmd] = 0 # 0 = not started, >0 = started
     assert len(cmd_list) == len(cmd_to_pid), f'detected {len(cmd_list)-len(cmd_to_pid)}/{len(cmd_list)} command duplicates'
+    count = 0
     while True:
         for cmd in [cmd for cmd in cmd_list if cmd_to_pid[cmd] == 0]:
             if len(pid_to_cmd) >= ncpu:
                 break
             proc = subprocess.Popen(cmd, shell=True)
-            print(f'# [{len(pid_to_cmd)}] START({proc.pid}):  {cmd}')
+            #print(f'# [{count}/{len(cmd_list)}] START({proc.pid}):  {cmd}')
+            with open(_multilog, "a") as log:
+                print(f'{Now()} START pid={proc.pid}:  {cmd}', file=log)
+            count += 1
             pid_to_cmd[proc.pid] = cmd
             cmd_to_pid[cmd] = proc.pid
             pid_to_time[proc.pid] = time.time()
@@ -74,7 +89,9 @@ def Run(cmd_list, ncpu=0):
         cmd = pid_to_cmd[pid]
         del pid_to_cmd[pid]
         del pid_to_time[pid]
-        print(f'# [{len(pid_to_cmd)}] END({pid}:{retval} time={NiceTime(elapsed)}):  {cmd}')
+        print(f'# END({pid}:{retval} time={NiceTime(elapsed)}):  {cmd}')
+        with open(_multilog, "a") as log:
+            print(f'{Now()} END pid={pid} rc={retval} time={NiceTime(elapsed)}:  {cmd}', file=log)
 
 def PrintTestCmds():
     with os.scandir('/usr/bin') as dirlist:
