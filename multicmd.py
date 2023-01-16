@@ -8,7 +8,7 @@ def Now():
     return now.strftime("%Y%m%d.%H:%M:%S")
 
 _cores = 0
-_multilog = f'{os.environ["HOME"]}/multi.log'
+_multilog = f'{os.environ["HOME"]}/multicmd.log'
 
 def CountCores():
     global _cores
@@ -37,15 +37,12 @@ def RunByOne(cmd_list):
     pids = {}
     count = 0
     for cmd in cmd_list:
-        proc = subprocess.Popen(cmd, shell=True)
-        # print(f'#  [{count}/{len(cmd_list)}] START({proc.pid}):  {cmd}')
-        with open(_multilog, "a") as log:
-            print(f'{Now()} START pid={proc.pid}:  {cmd}', file=log)
-        count += 1
-        try:
-            pid, retval = os.wait()
-        except os.error: # OSError: [Errno 10] No child processes
-            continue
+        with subprocess.Popen(cmd, shell=True) as proc:
+            print(f'#  [{count}/{len(cmd_list)}] START({proc.pid}):  {cmd}')
+            with open(_multilog, "a") as log:
+                print(f'{Now()} BEG pid={proc.pid}:  {cmd}', file=log)
+            count += 1
+            proc.communucate()
 
 def Run(cmd_list, ncpu=0):
     """
@@ -62,16 +59,17 @@ def Run(cmd_list, ncpu=0):
         assert cmd not in cmd_to_pid, f'duplicate cmd: {cmd}'
         cmd_to_pid[cmd] = 0 # 0 = not started, >0 = started
     assert len(cmd_list) == len(cmd_to_pid), f'detected {len(cmd_list)-len(cmd_to_pid)}/{len(cmd_list)} command duplicates'
-    count = 0
+    beg_count = 0
+    end_count = 0
     while True:
         for cmd in [cmd for cmd in cmd_list if cmd_to_pid[cmd] == 0]:
             if len(pid_to_cmd) >= ncpu:
                 break
-            proc = subprocess.Popen(cmd, shell=True)
-            #print(f'# [{count}/{len(cmd_list)}] START({proc.pid}):  {cmd}')
+            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, bufsize=1)
+            print(f'# BEG [{beg_count}/{len(cmd_list)}] pid={proc.pid}')
+            beg_count += 1
             with open(_multilog, "a") as log:
-                print(f'{Now()} START pid={proc.pid}:  {cmd}', file=log)
-            count += 1
+                print(f'{Now()} BEG pid={proc.pid}:  {cmd}', file=log)
             pid_to_cmd[proc.pid] = cmd
             cmd_to_pid[cmd] = proc.pid
             pid_to_time[proc.pid] = time.time()
@@ -85,11 +83,12 @@ def Run(cmd_list, ncpu=0):
             if False and len(pid_to_cmd):
                 raise os.error(f'os.wait error with {len(pid_to_cmd)} not waited: {pid_to_cmd}')
             break
-        elapsed = time.time() - pid_to_time[pid]
         cmd = pid_to_cmd[pid]
+        elapsed = time.time() - pid_to_time[pid]
         del pid_to_cmd[pid]
         del pid_to_time[pid]
-        print(f'# END({pid}:{retval} time={NiceTime(elapsed)}):  {cmd}')
+        print(f'# END [{end_count}/{len(cmd_list)}] pid={pid} {NiceTime(elapsed)}')
+        end_count += 1
         with open(_multilog, "a") as log:
             print(f'{Now()} END pid={pid} rc={retval} time={NiceTime(elapsed)}:  {cmd}', file=log)
 

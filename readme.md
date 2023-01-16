@@ -24,8 +24,8 @@ optional arguments:
   -t, --test            print a bunch of commands for testing (default: False)
 
 Examples:
-  (for n in 8 7 6 5 4 3 2 1; do echo "sleep $n"; done) | /home/mbi/coding/putil/multicmd.py -n 4 # run 8 processes on 4 cores
-  /home/mbi/coding/putil/multicmd.py -t | /home/mbi/coding/putil/multicmd.py # run some 1800 jobs with redirection t files using all available cores
+  (for n in 8 7 6 5 4 3 2 1; do echo "sleep $n"; done) | multicmd.py -n 4 # run 8 processes on 4 cores
+  multicmd.py -t | multicmd.py # run some 1800 jobs with redirection t files using all available cores
 ```
 
 ## TODO
